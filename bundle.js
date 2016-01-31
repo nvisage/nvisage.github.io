@@ -102,8 +102,6 @@ Object.defineProperty(exports, "__esModule", {
 
 var _board = require('../board/board.jsx');
 
-var _thread = require('../thread/thread.jsx');
-
 var AppReducer = function AppReducer() {
   var state = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
   var action = arguments[1];
@@ -113,19 +111,21 @@ var AppReducer = function AppReducer() {
       return state;
   }
 };
-exports.default = [AppReducer, _board.BoardRedux, _thread.ThreadRedux];
+exports.default = [AppReducer, _board.BoardRedux];
 
-},{"../board/board.jsx":4,"../thread/thread.jsx":18}],3:[function(require,module,exports){
+},{"../board/board.jsx":4}],3:[function(require,module,exports){
 var css = ".board{z-index:1}.board .board-main{height:80vh;background-color:#f0f0f0}.Button{width:100px;height:30px;display:inline-block;margin:0 5px;text-align:center;color:#fff;background-color:#1296B2}.TextBox{width:100%;height:100%;display:block;z-index:2;position:relative;resize:none;font-size:14px}.Contain{width:0;height:0;z-index:1;position:absolute}.MoveBox{padding:10px;background-color:#1296B2;width:100px;cursor:move}#black,#blue,#green,#red,#yellow{border-radius:25%}#canvasDiv{z-index:0}#canvasDiv canvas{z-index:0;position:relative;border-style:solid}#canvasDiv canvas:hover{cursor:crosshair}"; (require("browserify-css").createStyle(css, { "href": "app\\js\\components\\board\\board.css"})); module.exports = css;
 },{"browserify-css":22}],4:[function(require,module,exports){
 'use strict';
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.BoardRedux = undefined;
+exports.BoardRedux = exports.BoardActions = undefined;
 
 var _react = require('react');
 
@@ -161,8 +161,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
@@ -187,15 +185,12 @@ var BoardComponent = function (_React$Component) {
       var title = document.getElementById('input-title');
       var author = document.getElementById('input-author');
       var text = document.getElementById('input-text');
-      this.props.dispatch(Actions.newCard(title.value, author.value, text.value, window.imageData));
+      this.props.dispatch(BoardActions.newCard(title.value, author.value, text.value, window.imageData));
       title.value = '';
       author.value = '';
       text.value = '';
       window.imageData = null;
     }
-  }, {
-    key: 'dispatchViewCard',
-    value: function dispatchViewCard(reference) {}
   }, {
     key: 'componentDidMount',
     value: function componentDidMount() {
@@ -214,7 +209,6 @@ var BoardComponent = function (_React$Component) {
       (0, _jquery2.default)('#canvas').mousedown(function (e) {
         var mouseX = e.pageX - (0, _jquery2.default)('#canvas').offset().left;
         var mouseY = e.pageY;
-        console.log(e.pageX, e.pageY);
         if (isDrawMode) {
           paint = true;
           addClick(e.pageX - (0, _jquery2.default)('#canvas').offset().left, e.pageY - (0, _jquery2.default)('#canvas').offset().top);
@@ -410,7 +404,9 @@ var BoardComponent = function (_React$Component) {
       var _iteratorError = undefined;
 
       try {
-        for (var _iterator = this.props.cards[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+        for (var _iterator = _jquery2.default.map(this.props.cards, function (value, index) {
+          return [value];
+        })[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
           var card = _step.value;
 
           k.push(_react2.default.createElement(_card2.default, { key: j, reference: card.reference, title: card.title, date: card.date, author: card.author, text: card.text, image: card.image, className: 'dragandresize' }));
@@ -496,30 +492,67 @@ var BoardComponent = function (_React$Component) {
 
 var CardModel = function CardModel(reference, title, date, author, text, image) {
   return {
-    reference: reference, title: title, date: date, author: author, text: text, image: image
+    reference: reference, title: title, date: date, author: author, text: text, image: image, comments: {}
   };
 };
 
-var Actions = {
+var CommentModel = function CommentModel(text, newid, parentId) {
+  return {
+    text: text, reference: newid, parentId: parentId
+  };
+};
+
+var BoardActions = exports.BoardActions = {
   newCard: function newCard(title, author, text, image) {
     return {
       type: 'NEW_CARD',
       cardData: { reference: chance.guid(), title: title, date: new Date().toISOString(), author: author, text: text, image: image }
     };
+  },
+  cardView: function cardView(reference) {
+    return {
+      type: 'CARD_VIEW',
+      cardReference: reference
+    };
+  },
+  commentReply: function commentReply(id, text) {
+    console.log('commentId2', id);
+    return {
+      type: 'COMMENT_REPLY',
+      commentId: id,
+      commentText: text
+    };
   }
 };
 
 var BoardReducer = function BoardReducer() {
-  var state = arguments.length <= 0 || arguments[0] === undefined ? { cards: [], threads: {} } : arguments[0];
+  var state = arguments.length <= 0 || arguments[0] === undefined ? { cards: {}, currentCardReference: 'nothing' } : arguments[0];
   var action = arguments[1];
 
+  var newCard = undefined;
+  var newCards = undefined;
   switch (action.type) {
     case 'NEW_CARD':
-      var newCards = [].concat(_toConsumableArray(state.cards), [CardModel(action.cardData.reference, action.cardData.title, action.cardData.date, action.cardData.author, action.cardData.text, action.cardData.image)]);
+      newCard = CardModel(action.cardData.reference, action.cardData.title, action.cardData.date, action.cardData.author, action.cardData.text, action.cardData.image);
+      newCards = Object.assign({}, state.cards, _defineProperty({}, action.cardData.reference, newCard));
       return Object.assign({}, state, {
-        cards: newCards,
-        threads: Object.assign({}, state.threads, _defineProperty({}, action.cardData.reference, []))
+        cards: newCards
       });
+    case 'CARD_VIEW':
+      return Object.assign({}, state, { currentCardReference: action.cardReference });
+    case 'COMMENT_REPLY':
+      newCards = Object.assign({}, state.cards);
+      var newCId = chance.guid();
+      console.log('newcid', newCId);
+      var parent = undefined;
+      console.log(state.currentCardReference, action.commentId);
+      if (state.currentCardReference == action.commentId) {
+        parent = newCards[state.currentCardReference];
+      } else {
+        parent = findById(newCards[state.currentCardReference], action.commentId);
+      }
+      parent.comments[newCId] = CommentModel(action.commentText, newCId, action.commentId);
+      return Object.assign({}, state, { cards: newCards });
     default:
       return state;
   }
@@ -532,6 +565,23 @@ var select = function select(state) {
 };
 
 exports.default = (0, _reactRedux.connect)(select)(BoardComponent);
+
+var findById = function findById(o, id) {
+  //Early return
+  if (o.reference === id) {
+    return o;
+  }
+  var result, p;
+  for (p in o) {
+    if (o.hasOwnProperty(p) && _typeof(o[p]) === 'object') {
+      result = findById(o[p], id);
+      if (result) {
+        return result;
+      }
+    }
+  }
+  return result;
+};
 
 },{"../card/card.jsx":6,"./board.css":3,"chance":25,"jquery":77,"jquery-ui/draggable":73,"jquery-ui/resizable":75,"lodash":78,"react":268,"react-redux":83,"react-router":115}],5:[function(require,module,exports){
 var css = ".z-index{z-index:1}.card .mdl-card{width:500px}.card .mdl-card__title{color:#fff;background-color:#f44336}.card img{display:block;margin:auto}.card{display:inline-block}"; (require("browserify-css").createStyle(css, { "href": "app\\js\\components\\card\\card.css"})); module.exports = css;
@@ -549,6 +599,8 @@ var _react = require('react');
 var _react2 = _interopRequireDefault(_react);
 
 var _reactRedux = require('react-redux');
+
+var _board = require('../board/board.jsx');
 
 require('./card.css');
 
@@ -570,6 +622,11 @@ var CardComponent = function (_React$Component) {
   }
 
   _createClass(CardComponent, [{
+    key: 'dispatchViewCard',
+    value: function dispatchViewCard() {
+      return this.props.dispatch(_board.BoardActions.cardView(this.props.reference));
+    }
+  }, {
     key: 'render',
     value: function render() {
       return _react2.default.createElement(
@@ -598,7 +655,7 @@ var CardComponent = function (_React$Component) {
             { className: 'mdl-card__actions mdl-card--border' },
             _react2.default.createElement(
               'a',
-              { className: 'mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect' },
+              { onClick: this.dispatchViewCard.bind(this), className: 'mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect' },
               'View'
             )
           )
@@ -616,7 +673,7 @@ var select = function select(state) {
 
 exports.default = (0, _reactRedux.connect)(select)(CardComponent);
 
-},{"./card.css":5,"react":268,"react-redux":83}],7:[function(require,module,exports){
+},{"../board/board.jsx":4,"./card.css":5,"react":268,"react-redux":83}],7:[function(require,module,exports){
 var css = ".comment{font-size:14px;padding:2px}.comment .comment-material{padding:6px}.comment .comment-buttons a:hover{cursor:pointer}.comment .comment-buttons{font-size:12px}.comment .comment{margin-left:16px;border-left-style:solid}"; (require("browserify-css").createStyle(css, { "href": "app\\js\\components\\comment\\comment.css"})); module.exports = css;
 },{"browserify-css":22}],8:[function(require,module,exports){
 'use strict';
@@ -795,6 +852,8 @@ var _react2 = _interopRequireDefault(_react);
 
 var _reactRouter = require('react-router');
 
+var _reactRedux = require('react-redux');
+
 var _board = require('../board/board.jsx');
 
 var _board2 = _interopRequireDefault(_board);
@@ -829,6 +888,8 @@ var HomeComponent = function (_React$Component) {
   _createClass(HomeComponent, [{
     key: 'render',
     value: function render() {
+      var card = this.props.cards[this.props.currentCardReference];
+      console.log('card', card);
       return _react2.default.createElement(
         'div',
         { className: 'home' },
@@ -851,7 +912,7 @@ var HomeComponent = function (_React$Component) {
             _react2.default.createElement(
               'div',
               { className: 'col-md-3 col-no-padding' },
-              _react2.default.createElement(_thread2.default, { title: 'this is a title', date: '1/30/2016', author: 'Aku', description: 'this is a description' })
+              card ? _react2.default.createElement(_thread2.default, { reference: card.reference, title: card.title, date: card.date, author: card.author, description: card.text, comments: card.comments }) : _react2.default.createElement(_thread2.default, { title: 'Select a card', date: '', author: 'author', description: '', comments: new Object() })
             )
           )
         )
@@ -867,9 +928,14 @@ var HomeComponent = function (_React$Component) {
   return HomeComponent;
 }(_react2.default.Component);
 
-exports.default = HomeComponent;
+var select = function select(state) {
+  console.log(state.BoardReducer);
+  return state.BoardReducer;
+};
 
-},{"../board/board.jsx":4,"../nav/nav.jsx":14,"../thread/thread.jsx":18,"./home.css":11,"react":268,"react-router":115}],13:[function(require,module,exports){
+exports.default = (0, _reactRedux.connect)(select)(HomeComponent);
+
+},{"../board/board.jsx":4,"../nav/nav.jsx":14,"../thread/thread.jsx":18,"./home.css":11,"react":268,"react-redux":83,"react-router":115}],13:[function(require,module,exports){
 var css = ".nav{width:100%;height:100vh;background-color:#222}.nav .list-item{background-color:rgba(244,67,54,.66);border:none;margin:16px;padding:16px;color:#FAFAFA;text-align:center}.nav .list-item.active{background-color:rgba(244,67,54,1)}.nav .list-item:hover{background-color:rgba(244,67,54,1);cursor:pointer}.nav .header{background-color:#FFFFFA;text-align:center;padding:16px;width:100%}.nav .header h1{color:#222}.nav .mdl-card{min-height:0;min-width:0}"; (require("browserify-css").createStyle(css, { "href": "app\\js\\components\\nav\\nav.css"})); module.exports = css;
 },{"browserify-css":22}],14:[function(require,module,exports){
 'use strict';
@@ -973,6 +1039,10 @@ var _react = require('react');
 
 var _react2 = _interopRequireDefault(_react);
 
+var _reactRedux = require('react-redux');
+
+var _board = require('../board/board.jsx');
+
 require('./replybox.css');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -993,18 +1063,26 @@ var ReplyboxComponent = function (_React$Component) {
   }
 
   _createClass(ReplyboxComponent, [{
+    key: 'dispatchCommentReply',
+    value: function dispatchCommentReply() {
+      var comment = document.getElementById('commentReplyBox');
+      console.log('comment3', this.props.parentId);
+      this.props.dispatch(_board.BoardActions.commentReply(this.props.parentId, comment.value));
+      comment.value = '';
+    }
+  }, {
     key: 'render',
     value: function render() {
       return _react2.default.createElement(
         'div',
         { className: 'replybox' },
-        _react2.default.createElement('textarea', null),
+        _react2.default.createElement('textarea', { id: 'commentReplyBox' }),
         _react2.default.createElement(
           'div',
           { className: 'replybox-buttons' },
           _react2.default.createElement(
             'a',
-            null,
+            { onClick: this.dispatchCommentReply.bind(this) },
             'Submit'
           )
         )
@@ -1015,9 +1093,13 @@ var ReplyboxComponent = function (_React$Component) {
   return ReplyboxComponent;
 }(_react2.default.Component);
 
-exports.default = ReplyboxComponent;
+var select = function select(state) {
+  return state.BoardReducer;
+};
 
-},{"./replybox.css":15,"react":268}],17:[function(require,module,exports){
+exports.default = (0, _reactRedux.connect)(select)(ReplyboxComponent);
+
+},{"../board/board.jsx":4,"./replybox.css":15,"react":268,"react-redux":83}],17:[function(require,module,exports){
 var css = ".thread{padding:4px}.thread p{font-size:14px}"; (require("browserify-css").createStyle(css, { "href": "app\\js\\components\\thread\\thread.css"})); module.exports = css;
 },{"browserify-css":22}],18:[function(require,module,exports){
 'use strict';
@@ -1027,13 +1109,10 @@ var _createClass = function () { function defineProperties(target, props) { for 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.ThreadRedux = undefined;
 
 var _react = require('react');
 
 var _react2 = _interopRequireDefault(_react);
-
-var _reactRedux = require('react-redux');
 
 var _comment = require('../comment/comment.jsx');
 
@@ -1042,6 +1121,10 @@ var _comment2 = _interopRequireDefault(_comment);
 var _replybox = require('../replybox/replybox.jsx');
 
 var _replybox2 = _interopRequireDefault(_replybox);
+
+var _jquery = require('jquery');
+
+var _jquery2 = _interopRequireDefault(_jquery);
 
 require('./thread.css');
 
@@ -1063,8 +1146,54 @@ var ThreadComponent = function (_React$Component) {
   }
 
   _createClass(ThreadComponent, [{
+    key: 'parseComments',
+    value: function parseComments(children) {
+      console.log('children', children);
+      if (!children) {
+        return '';
+      }
+      if (children.length < 1) {
+        return '';
+      }
+      var k = [];
+      var _iteratorNormalCompletion = true;
+      var _didIteratorError = false;
+      var _iteratorError = undefined;
+
+      try {
+        for (var _iterator = _jquery2.default.map(children, function (value, index) {
+          console.log('aku');
+          return [value];
+        })[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          var comment = _step.value;
+
+          k.push(_react2.default.createElement(
+            _comment2.default,
+            { text: comment.text, reply: false },
+            this.parseComments(comment.comments)
+          ));
+        }
+      } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion && _iterator.return) {
+            _iterator.return();
+          }
+        } finally {
+          if (_didIteratorError) {
+            throw _iteratorError;
+          }
+        }
+      }
+
+      return k;
+    }
+  }, {
     key: 'render',
     value: function render() {
+      console.log('reference', this.props.reference);
       return _react2.default.createElement(
         'div',
         { className: 'thread' },
@@ -1085,21 +1214,8 @@ var ThreadComponent = function (_React$Component) {
           null,
           this.props.description
         ),
-        _react2.default.createElement(_replybox2.default, null),
-        _react2.default.createElement(
-          _comment2.default,
-          { text: 'Hello this is a comment' },
-          _react2.default.createElement(_comment2.default, { text: 'this is a reply to that comment', reply: true })
-        ),
-        _react2.default.createElement(
-          _comment2.default,
-          { text: 'this is another comment' },
-          _react2.default.createElement(
-            _comment2.default,
-            { text: 'this is the reply to the second comment' },
-            _react2.default.createElement(_comment2.default, { text: 'tertiary reply' })
-          )
-        )
+        _react2.default.createElement(_replybox2.default, { parentId: this.props.reference }),
+        this.parseComments(this.props.comments)
       );
     }
   }]);
@@ -1107,36 +1223,9 @@ var ThreadComponent = function (_React$Component) {
   return ThreadComponent;
 }(_react2.default.Component);
 
-var Actions = {
-  cardView: function cardView(reference) {
-    return {
-      type: 'CARD_VIEW',
-      cardReference: reference
-    };
-  }
-};
+exports.default = ThreadComponent;
 
-var ThreadReducer = function ThreadReducer() {
-  var state = arguments.length <= 0 || arguments[0] === undefined ? { currentCardReference: 'nothing' } : arguments[0];
-  var action = arguments[1];
-
-  switch (action.type) {
-    case 'CARD_VIEW':
-      return Object.assign({}, state, { currentCardReference: action.cardReference });
-    default:
-      return state;
-  }
-};
-
-var ThreadRedux = exports.ThreadRedux = { ThreadReducer: ThreadReducer };
-
-var select = function select(state) {
-  return state.ThreadReducer;
-};
-
-exports.default = (0, _reactRedux.connect)(select)(ThreadComponent);
-
-},{"../comment/comment.jsx":8,"../replybox/replybox.jsx":16,"./thread.css":17,"react":268,"react-redux":83}],19:[function(require,module,exports){
+},{"../comment/comment.jsx":8,"../replybox/replybox.jsx":16,"./thread.css":17,"jquery":77,"react":268}],19:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
